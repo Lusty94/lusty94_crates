@@ -29,7 +29,7 @@ QBCore.Functions.CreateCallback('lusty94_crates:get:Crowbar', function(source, c
     local src = source
     local Ply = QBCore.Functions.GetPlayer(src)
     local item = Ply.Functions.GetItemByName("crowbar")
-    if item then
+    if item and item.amount >= 1 then
         cb(true)
     else
         cb(false)
@@ -65,8 +65,9 @@ RegisterNetEvent('lusty94_crates:server:OpenItemCrate', function()
     }
     local items = ItemCrateItems[math.random(#ItemCrateItems)]
     if InvType == 'qb' then
-        Player.Functions.AddItem(items, amount)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        if exports['qb-inventory']:AddItem(src, items, amount, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        end
     elseif InvType == 'ox' then
         if exports.ox_inventory:CanCarryItem(src, items, amount) then
             exports.ox_inventory:AddItem(src, items, amount)
@@ -109,8 +110,9 @@ RegisterNetEvent('lusty94_crates:server:OpenMedicalCrate', function()
     }
     local items = MedicalCrateItems[math.random(#MedicalCrateItems)]
     if InvType == 'qb' then
-        Player.Functions.AddItem(items, amount)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        if exports['qb-inventory']:AddItem(src, items, amount, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        end
     elseif InvType == 'ox' then
         if exports.ox_inventory:CanCarryItem(src, items, amount) then
             exports.ox_inventory:AddItem(src, items, amount)
@@ -136,8 +138,9 @@ RegisterNetEvent('lusty94_crates:server:OpenWeaponCrate', function()
     }
     local items = WeaponCrateItems[math.random(#WeaponCrateItems)]
     if InvType == 'qb' then
-        Player.Functions.AddItem(items, 1)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', 1)
+        if exports['qb-inventory']:AddItem(src, items, 1, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        end
     elseif InvType == 'ox' then
         if exports.ox_inventory:CanCarryItem(src, items, 1) then
             exports.ox_inventory:AddItem(src, items, 1)
@@ -186,8 +189,9 @@ RegisterNetEvent('lusty94_crates:server:OpenAmmoCrate', function()
     }
     local items = AmmoCrateItems[math.random(#AmmoCrateItems)]
     if InvType == 'qb' then
-        Player.Functions.AddItem(items, amount)
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        if exports['qb-inventory']:AddItem(src, items, amount, nil, nil, nil) then
+            TriggerClientEvent('qb-inventory:client:ItemBox', src, QBCore.Shared.Items[items], 'add', amount)
+        end
     elseif InvType == 'ox' then
         if exports.ox_inventory:CanCarryItem(src, items, amount) then
             exports.ox_inventory:AddItem(src, items, amount)

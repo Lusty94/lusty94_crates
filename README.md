@@ -51,27 +51,41 @@ PlayerData.metadata['cratexp'] = PlayerData.metadata['cratexp'] or 0 -- Added fo
 
 ## INSTALLATION
 
-- Add the ##ITEMS snippet below into your core/shared/items.lua file
+- Add the ##ITEMS snippet below into your core/shared/items.lua file - ox_inventory users add the items to inventory/data/items.lua
 - Add all .png images inside [images] folder into your inventory/html/images folder - ox_inventory users place images inside inventory/web/images
 
 
 
 
-## ITEMS
+## QB-CORE ITEMS
 
 ```
 
-CHECK THE SERVER EVENTS FOR ITEM GIVING AS THE ITEMS SHOULD BE ALREADY IN YOUR ITEMS.LUA BY DEFAULT
-IF YOU WISH TO ADD OR REMOVE SPECIFIC ITEMS THEN ADD OR REMOVE THEM WHERE NECCESSARY IN THE RELEVANT EVENTS
-ADD YOUR OWN METHODS OF OBTAINING THE CROWBAR - MAYBE HARDWARE STORE?
+    --crates 
+    -- crowbar required to target
+    crowbar = {name = 'crowbar', label = 'Crowbar', weight = 200, type = 'item', image = 'crowbar.png', unique = true, useable = true, shouldClose = true, combinable = nil, description = 'Used to open stuff?'},
 
---crates 
--- crowbar required to target
-crowbar = {name = 'crowbar', label = 'Crowbar', weight = 200, type = 'item', image = 'crowbar.png', unique = true, useable = true, shouldClose = true, combinable = nil, description = 'Used to open stuff?'},
 
 ```
 
+## OX_INVENTORY ITEMS
 
+```
+
+    
+    ["crowbar"] = {
+		label = "Crowbar",
+		weight = 200,
+		stack = true,
+		close = true,
+		description = "Used to open stuff?",
+		client = {
+			image = "crowbar.png",
+		}
+	},
+
+
+```
 
 
 

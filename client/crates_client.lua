@@ -1,8 +1,9 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local TargetType = Config.CoreSettings.Target.Type
 local NotifyType = Config.CoreSettings.Notify.Type
+local InvType = Config.CoreSettings.Inventory.Type
 local busy = false
-local Crates = {}
+local spawnedCrates = {}
 
 
 
@@ -31,20 +32,17 @@ end
 
 CreateThread(function()
 	for k, v in pairs(Config.InteractionLocations.Crates) do
-		RequestModel(v.PropName)
-		while not HasModelLoaded(v.PropName) do
-			Wait(100)
-		end
-		local crates = CreateObject(v.PropName, v.Location.x, v.Location.y, v.Location.z - 1, false, true, false)
-		SetEntityHeading(crates, v.Heading)
-		PlaceObjectOnGroundProperly(crates, true)
-		FreezeEntityPosition(crates, true)
-		Crates[#Crates+1] = crates
+		lib.requestModel(v.PropName)
+		crateObjects = CreateObject(v.PropName, v.Location.x, v.Location.y, v.Location.z - 1, false, true, false)
+		SetEntityHeading(crateObjects, v.Heading)
+		PlaceObjectOnGroundProperly(crateObjects, true)
+		FreezeEntityPosition(crateObjects, true)
+		spawnedCrates[#spawnedCrates+1] = crateObjects
 		SetModelAsNoLongerNeeded(v.PropName)
 		if TargetType == 'qb' then
-		    exports['qb-target']:AddTargetEntity(crates, { options = { { type = "client", item = v.Item, event = v.Event, icon = v.TargetIcon, label = v.TargetLabel, }, }, distance = v.Distance })
+		    exports['qb-target']:AddTargetEntity(crateObjects, { options = { { type = "client", item = v.Item, event = v.Event, icon = v.TargetIcon, label = v.TargetLabel, }, }, distance = v.Distance })
         elseif TargetType == 'ox' then
-            exports.ox_target:addLocalEntity(crates, { { name = 'crates', items = v.Item, icon = v.TargetIcon, label = v.TargetLabel, event = v.Event, distance = v.Distance} })
+            exports.ox_target:addLocalEntity(crateObjects, { { name = 'crateObjects', items = v.Item, icon = v.TargetIcon, label = v.TargetLabel, event = v.Event, distance = v.Distance} })
         end
 	end
 end)
@@ -57,9 +55,9 @@ RegisterNetEvent("lusty94_crates:client:OpenItemCrate", function()
 	local coords = GetEntityCoords(playerPed)
 	local nearbyObject, nearbyID
 
-	for i=1, #Crates, 1 do
-		if #(coords - GetEntityCoords(Crates[i])) < 3 then
-			nearbyObject, nearbyID = Crates[i], i
+	for i=1, #spawnedCrates, 1 do
+		if #(coords - GetEntityCoords(spawnedCrates[i])) < 3 then
+			nearbyObject, nearbyID = spawnedCrates[i], i
 		end
 	end
 
@@ -73,13 +71,19 @@ RegisterNetEvent("lusty94_crates:client:OpenItemCrate", function()
                 	if success then
 						busy = true
 						LockInventory(true)
-						if lib.progressCircle({ duration = Config.CoreSettings.Timers.OpenCrate, label = 'Searching Crate', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = false, move = true, }, anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, }) then  
-							ClearPedTasks(PlayerPedId())
+						if lib.progressCircle({ 
+							duration = Config.CoreSettings.Timers.OpenCrate, 
+							label = 'Searching Crate', 
+							position = 'bottom', 
+							useWhileDead = false, 
+							canCancel = true, 
+							disable = { car = false, move = true, }, 
+							anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, 
+							prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, 
+					}) then  
 							SetEntityAsMissionEntity(nearbyObject, false, true)
 							DeleteObject(nearbyObject)
-							busy = false
-							LockInventory(false)
-							Crates[nearbyID] = nil
+							spawnedCrates[nearbyID] = nil
 							local chance = math.random(1,100)
 							local chance2 = Config.CoreSettings.Chances.FindItem
 							if chance <= chance2 then
@@ -87,10 +91,11 @@ RegisterNetEvent("lusty94_crates:client:OpenItemCrate", function()
 							else
 								SendNotify('Nothing found', 'error', 2000)
 							end
+							busy = false
+							LockInventory(false)
 						else 
 							busy = false
 							LockInventory(false)
-							ClearPedTasks(PlayerPedId())
 							SendNotify('Action cancelled', 'error', 2000)
 						end
 					else
@@ -111,9 +116,9 @@ RegisterNetEvent("lusty94_crates:client:OpenMedicalCrate", function()
 	local coords = GetEntityCoords(playerPed)
 	local nearbyObject, nearbyID
 
-	for i=1, #Crates, 1 do
-		if #(coords - GetEntityCoords(Crates[i])) < 3 then
-			nearbyObject, nearbyID = Crates[i], i
+	for i=1, #spawnedCrates, 1 do
+		if #(coords - GetEntityCoords(spawnedCrates[i])) < 3 then
+			nearbyObject, nearbyID = spawnedCrates[i], i
 		end
 	end
 
@@ -127,13 +132,19 @@ RegisterNetEvent("lusty94_crates:client:OpenMedicalCrate", function()
                 	if success then
 						busy = true
 						LockInventory(true)
-						if lib.progressCircle({ duration = Config.CoreSettings.Timers.OpenCrate, label = 'Searching Crate', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = false, move = true, }, anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, }) then  
-							ClearPedTasks(PlayerPedId())
+						if lib.progressCircle({ 
+							duration = Config.CoreSettings.Timers.OpenCrate, 
+							label = 'Searching Crate', 
+							position = 'bottom', 
+							useWhileDead = false, 
+							canCancel = true, 
+							disable = { car = false, move = true, }, 
+							anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, 
+							prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, 
+						}) then  
 							SetEntityAsMissionEntity(nearbyObject, false, true)
 							DeleteObject(nearbyObject)
-							busy = false
-							LockInventory(false)
-							Crates[nearbyID] = nil
+							spawnedCrates[nearbyID] = nil
 							local chance = math.random(1,100)
 							local chance2 = Config.CoreSettings.Chances.FindItem
 							if chance <= chance2 then
@@ -141,10 +152,11 @@ RegisterNetEvent("lusty94_crates:client:OpenMedicalCrate", function()
 							else
 								SendNotify('Nothing found', 'error', 2000)
 							end
+							busy = false
+							LockInventory(false)
 						else 
 							busy = false
 							LockInventory(false)
-							ClearPedTasks(PlayerPedId())
 							SendNotify('Action cancelled', 'error', 2000)
 						end
 					else
@@ -165,9 +177,9 @@ RegisterNetEvent("lusty94_crates:client:OpenWeaponCrate", function()
 	local coords = GetEntityCoords(playerPed)
 	local nearbyObject, nearbyID
 
-	for i=1, #Crates, 1 do
-		if #(coords - GetEntityCoords(Crates[i])) < 3 then
-			nearbyObject, nearbyID = Crates[i], i
+	for i=1, #spawnedCrates, 1 do
+		if #(coords - GetEntityCoords(spawnedCrates[i])) < 3 then
+			nearbyObject, nearbyID = spawnedCrates[i], i
 		end
 	end
 
@@ -181,24 +193,31 @@ RegisterNetEvent("lusty94_crates:client:OpenWeaponCrate", function()
                 	if success then
 						busy = true
 						LockInventory(true)
-						if lib.progressCircle({ duration = Config.CoreSettings.Timers.OpenCrate, label = 'Searching Crate', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = false, move = true, }, anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, }) then  
-							ClearPedTasks(PlayerPedId())
+						if lib.progressCircle({ 
+							duration = Config.CoreSettings.Timers.OpenCrate, 
+							label = 'Searching Crate', 
+							position = 'bottom', 
+							useWhileDead = false, 
+							canCancel = true, 
+							disable = { car = false, move = true, }, 
+							anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, 
+							prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, 
+						}) then
 							SetEntityAsMissionEntity(nearbyObject, false, true)
 							DeleteObject(nearbyObject)
-							busy = false
-							LockInventory(false)
-							Crates[nearbyID] = nil
+							spawnedCrates[nearbyID] = nil
 							local chance = math.random(1,100)
 							local chance2 = Config.CoreSettings.Chances.FindItem
 							if chance <= chance2 then
 								TriggerServerEvent('lusty94_crates:server:OpenWeaponCrate')
 							else
 								SendNotify('Nothing found', 'error', 2000)
+							busy = false
+							LockInventory(false)
 							end
 						else 
 							busy = false
 							LockInventory(false)
-							ClearPedTasks(PlayerPedId())
 							SendNotify('Action cancelled', 'error', 2000)
 						end
 					else
@@ -218,9 +237,9 @@ RegisterNetEvent("lusty94_crates:client:OpenAmmoCrate", function()
 	local coords = GetEntityCoords(playerPed)
 	local nearbyObject, nearbyID
 
-	for i=1, #Crates, 1 do
-		if #(coords - GetEntityCoords(Crates[i])) < 3 then
-			nearbyObject, nearbyID = Crates[i], i
+	for i=1, #spawnedCrates, 1 do
+		if #(coords - GetEntityCoords(spawnedCrates[i])) < 3 then
+			nearbyObject, nearbyID = spawnedCrates[i], i
 		end
 	end
 
@@ -234,13 +253,19 @@ RegisterNetEvent("lusty94_crates:client:OpenAmmoCrate", function()
                 	if success then
 						busy = true
 						LockInventory(true)
-						if lib.progressCircle({ duration = Config.CoreSettings.Timers.OpenCrate, label = 'Searching Crate', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = false, move = true, }, anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, }) then  
-							ClearPedTasks(PlayerPedId())
+						if lib.progressCircle({ 
+							duration = Config.CoreSettings.Timers.OpenCrate, 
+							label = 'Searching Crate', 
+							position = 'bottom', 
+							useWhileDead = false, 
+							canCancel = true, 
+							disable = { car = false, move = true, }, 
+							anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, 
+							prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, 
+						}) then  
 							SetEntityAsMissionEntity(nearbyObject, false, true)
 							DeleteObject(nearbyObject)
-							busy = false
-							LockInventory(false)
-							Crates[nearbyID] = nil
+							spawnedCrates[nearbyID] = nil
 							local chance = math.random(1,100)
 							local chance2 = Config.CoreSettings.Chances.FindItem
 							if chance <= chance2 then
@@ -248,10 +273,11 @@ RegisterNetEvent("lusty94_crates:client:OpenAmmoCrate", function()
 							else
 								SendNotify('Nothing found', 'error', 2000)
 							end
+							busy = false
+							LockInventory(false)
 						else 
 							busy = false
 							LockInventory(false)
-							ClearPedTasks(PlayerPedId())
 							SendNotify('Action cancelled', 'error', 2000)
 						end
 					else
@@ -271,9 +297,9 @@ RegisterNetEvent("lusty94_crates:client:OpenCashCrate", function()
 	local coords = GetEntityCoords(playerPed)
 	local nearbyObject, nearbyID
 
-	for i=1, #Crates, 1 do
-		if #(coords - GetEntityCoords(Crates[i])) < 3 then
-			nearbyObject, nearbyID = Crates[i], i
+	for i=1, #spawnedCrates, 1 do
+		if #(coords - GetEntityCoords(spawnedCrates[i])) < 3 then
+			nearbyObject, nearbyID = spawnedCrates[i], i
 		end
 	end
 
@@ -287,13 +313,20 @@ RegisterNetEvent("lusty94_crates:client:OpenCashCrate", function()
                 	if success then
 						busy = true
 						LockInventory(true)
-						if lib.progressCircle({ duration = Config.CoreSettings.Timers.OpenCrate, label = 'Searching Crate', position = 'bottom', useWhileDead = false, canCancel = true, disable = { car = false, move = true, }, anim = { dict = Config.Animations.SearchCrates.AnimDict, clip = Config.Animations.SearchCrates.Anim }, prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone }, }) then  
-							ClearPedTasks(PlayerPedId())
+						if lib.progressCircle({ 
+							duration = Config.CoreSettings.Timers.OpenCrate, 
+							label = 'Searching Crate', 
+							position = 'bottom', 
+							useWhileDead = false, 
+							canCancel = true, 
+							disable = { car = false, move = true, }, 
+							anim = { dict = Config.Animations.SearchCrates.AnimDict, 
+							clip = Config.Animations.SearchCrates.Anim }, 
+							prop = { model = Config.Animations.SearchCrates.Prop, pos = Config.Animations.SearchCrates.Pos, rot = Config.Animations.SearchCrates.Rot, bone = Config.Animations.SearchCrates.Bone },
+						}) then  
 							SetEntityAsMissionEntity(nearbyObject, false, true)
 							DeleteObject(nearbyObject)
-							busy = false
-							LockInventory(false)
-							Crates[nearbyID] = nil
+							spawnedCrates[nearbyID] = nil
 							local chance = math.random(1,100)
 							local chance2 = Config.CoreSettings.Chances.FindItem
 							if chance <= chance2 then
@@ -301,10 +334,11 @@ RegisterNetEvent("lusty94_crates:client:OpenCashCrate", function()
 							else
 								SendNotify('Nothing found', 'error', 2000)
 							end
+							busy = false
+							LockInventory(false)
 						else 
 							busy = false
 							LockInventory(false)
-							ClearPedTasks(PlayerPedId())
 							SendNotify('Action cancelled', 'error', 2000)
 						end
 					else
@@ -351,8 +385,9 @@ end
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
 		busy = false
-		for _, v in pairs(Crates) do SetEntityAsMissionEntity(v, false, true) DeleteObject(v) end
-        if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(crates, 'crates') elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(crates, 'crates') end
-		print('^5--<^3!^5>-- ^7| Lusty94 |^5 ^5--<^3!^5>--^7 Crates V1.0.0 Stopped Successfully ^5--<^3!^5>--^7')
+		LockInventory(false)
+		for _, v in pairs(spawnedCrates) do SetEntityAsMissionEntity(v, false, true) DeleteObject(v) end
+        if TargetType == 'qb' then exports['qb-target']:RemoveTargetEntity(crateObjects, 'crateObjects') elseif TargetType == 'ox' then exports.ox_target:removeLocalEntity(crateObjects, 'crateObjects') end
+		print('^5--<^3!^5>-- ^7| Lusty94 |^5 ^5--<^3!^5>--^7 Crates V1.0.1 Stopped Successfully ^5--<^3!^5>--^7')
 	end
 end)            
